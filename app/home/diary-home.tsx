@@ -18,7 +18,8 @@ export function DiaryStats() {
     diary.trips.forEach((t) =>
       tripStops(t, diary.photos).forEach((s) => {
         const found = map.locate([s.lon, s.lat]);
-        if (found && (!found.nearest || found.nearest.km < 50)) countries.add(found.index);
+        // 簡化版世界地圖沒有小島（例如隱岐），離島 200 公里內都算進最近的國家
+        if (found && (!found.nearest || found.nearest.km < 200)) countries.add(found.index);
       }),
     );
     const years = diary.trips.map((t) => t.startDate.slice(0, 4)).filter(Boolean).sort();
