@@ -1,4 +1,5 @@
-import type { TarotCard } from "./cards";
+import Image from "next/image";
+import { cardImage, type TarotCard } from "./cards";
 
 type Props = {
   card?: TarotCard;
@@ -6,12 +7,13 @@ type Props = {
   faceUp: boolean;
   delay?: number; // 翻牌延遲（毫秒），讓多張牌依序翻開
   className?: string;
+  sizes?: string;
 };
 
-// 一張可以翻面的塔羅牌：背面是步道指北針圖樣，正面是牌面
-export default function TarotCardView({ card, reversed, faceUp, delay = 0, className = "" }: Props) {
+// 一張可以翻面的塔羅牌：背面是步道指北針圖樣，正面是 Rider–Waite–Smith 牌面
+export default function TarotCardView({ card, reversed, faceUp, delay = 0, className = "", sizes = "160px" }: Props) {
   return (
-    <div className={`aspect-[2/3] perspective-[1200px] ${className}`}>
+    <div className={`aspect-[4/7] perspective-[1200px] ${className}`}>
       <div
         className={`relative h-full w-full transition-transform duration-700 transform-3d ${faceUp ? "rotate-y-180" : ""}`}
         style={{ transitionDelay: `${delay}ms` }}
@@ -27,18 +29,15 @@ export default function TarotCardView({ card, reversed, faceUp, delay = 0, class
         </div>
 
         {/* 正面 */}
-        <div className="absolute inset-0 rotate-y-180 rounded-xl border-[3px] border-wood bg-card shadow-md backface-hidden">
+        <div className="absolute inset-0 rotate-y-180 overflow-hidden rounded-xl bg-[#f4ecd8] shadow-md ring-1 ring-black/10 backface-hidden">
           {card && (
-            <div
-              className={`flex h-full flex-col items-center justify-between p-[8%] text-center ${reversed ? "rotate-180" : ""}`}
-            >
-              <span className="text-[clamp(0.6rem,1.6vw,0.85rem)] font-bold tracking-widest text-wood">{card.numeral}</span>
-              <span className="text-[clamp(1.6rem,6vw,3.2rem)] leading-none">{card.emoji}</span>
-              <div>
-                <p className="text-[clamp(0.75rem,2vw,1.05rem)] font-bold text-ink">{card.name}</p>
-                <p className="text-[clamp(0.5rem,1.3vw,0.7rem)] uppercase tracking-wide text-muted">{card.en}</p>
-              </div>
-            </div>
+            <Image
+              src={cardImage(card)}
+              alt={`${card.name}（${card.en}）${reversed ? "逆位" : "正位"}`}
+              fill
+              sizes={sizes}
+              className={`object-cover ${reversed ? "rotate-180" : ""}`}
+            />
           )}
         </div>
       </div>

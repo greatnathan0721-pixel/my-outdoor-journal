@@ -418,6 +418,9 @@ export const cards: TarotCard[] = [
   },
 ];
 
+// 牌面圖：Rider–Waite–Smith 塔羅（Pamela Colman Smith 繪，1909，公有領域），檔案在 public/tarot/
+export const cardImage = (card: TarotCard) => `/tarot/${String(card.id).padStart(2, "0")}.jpg`;
+
 export type PositionKind = keyof Reading | "option";
 
 export type Spread = {

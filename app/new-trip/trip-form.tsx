@@ -7,7 +7,8 @@ import StoredPhoto from "../components/stored-photo";
 import { inputClass, primaryButton, secondaryButton, StepLabel, Tag } from "../components/trail-ui";
 import { preparePhoto, type PhotoInfo } from "../lib/photo-utils";
 import { groupStops, tripStops } from "../lib/trip-stops";
-import { deleteTrip, saveTrip, useDiary } from "../lib/trips-db";
+import PlaceSearch from "../components/place-search";
+import { deleteTrip, saveTrip, updateTripLocation, useDiary } from "../lib/trips-db";
 
 type Pending = { key: string; name: string; preview: string; info: PhotoInfo | null };
 type Location = { lat: number; lon: number; label: string; source: "photo" | "search" };
@@ -35,6 +36,7 @@ export default function TripForm() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [stopNames, setStopNames] = useState<Record<string, string>>({});
+  const [fixingId, setFixingId] = useState<string | null>(null); // 正在補地點的旅程
   const fileRef = useRef<HTMLInputElement>(null);
   const diary = useDiary();
 
@@ -113,6 +115,13 @@ export default function TripForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (processing) return;
+    // 沒有任何地點就存檔的話，地圖上不會有圖釘，先提醒一下
+    if (!location && stops.length === 0) {
+      const ok = confirm(
+        "這趟旅程還沒有地點，首頁地圖上不會出現紅色圖釘。\n\n建議先按「📍 找地點」選位置。要先存起來、之後再補嗎？",
+      );
+      if (!ok) return;
+    }
     setSaving(true);
     try {
       await saveTrip(
@@ -293,7 +302,7 @@ export default function TripForm() {
         )}
       </form>
 
-      <section className="trail-card p-5 sm:p-7">
+      <section id="trips" className="trail-card scroll-mt-24 p-5 sm:p-7">
         <StepLabel step={4}>已經記錄的旅程（{diary.trips.length}）</StepLabel>
         {!diary.ready ? (
           <p className="text-muted">讀取中⋯</p>
@@ -304,7 +313,7 @@ export default function TripForm() {
             {diary.trips.map((t) => {
               const cover = t.photoIds.map((id) => diary.photos.get(id)).find(Boolean);
               return (
-                <li key={t.id} className="flex gap-3 rounded-2xl border border-line bg-sand p-3">
+                <li key={t.id} className="flex flex-wrap gap-3 rounded-2xl border border-line bg-sand p-3">
                   <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-moss">
                     {cover ? (
                       <StoredPhoto blob={cover.blob} alt={t.place} className="h-full w-full object-cover" />
@@ -321,17 +330,44 @@ export default function TripForm() {
                     <p className="text-xs">
                       {(() => {
                         const n = tripStops(t, diary.photos).length;
-                        return n > 0 ? <span className="text-forest">📍 {n} 支圖釘</span> : <span className="text-wood">尚未定位</span>;
+                        return n > 0 ? (
+                          <span className="text-forest">📍 {n} 支圖釘</span>
+                        ) : (
+                          <span className="font-semibold text-wood">⚠️ 尚未定位，地圖上看不到</span>
+                        );
                       })()}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => confirm(`確定要刪除「${t.place}」和裡面的照片嗎？刪除後無法復原。`) && deleteTrip(t)}
-                      className="mt-auto self-start text-xs text-wood hover:underline"
-                    >
-                      刪除
-                    </button>
+                    <div className="mt-auto flex gap-3 text-xs">
+                      {tripStops(t, diary.photos).length === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setFixingId(fixingId === t.id ? null : t.id)}
+                          className="font-semibold text-forest hover:underline"
+                        >
+                          📍 補上地點
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => confirm(`確定要刪除「${t.place}」和裡面的照片嗎？刪除後無法復原。`) && deleteTrip(t)}
+                        className="text-wood hover:underline"
+                      >
+                        刪除
+                      </button>
+                    </div>
                   </div>
+                  {fixingId === t.id && (
+                    <div className="w-full">
+                      <PlaceSearch
+                        initial={t.place}
+                        autoFocus
+                        onPick={async (p) => {
+                          await updateTripLocation(t, p.lat, p.lon);
+                          setFixingId(null);
+                        }}
+                      />
+                    </div>
+                  )}
                 </li>
               );
             })}

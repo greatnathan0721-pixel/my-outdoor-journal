@@ -132,6 +132,12 @@ export async function saveTrip(
   return id;
 }
 
+// 幫已經存好、但沒有地點的旅程補上位置
+export async function updateTripLocation(trip: Trip, lat: number, lon: number) {
+  await run("trips", "readwrite", (s) => s.put({ ...trip, lat, lon }));
+  await reload();
+}
+
 export async function deleteTrip(trip: Trip) {
   const d = await db();
   await new Promise<void>((resolve, reject) => {

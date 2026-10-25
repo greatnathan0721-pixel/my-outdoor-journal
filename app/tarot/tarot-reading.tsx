@@ -168,14 +168,21 @@ export default function TarotReading() {
                     reversed={drawn[i].reversed}
                     faceUp={phase === "revealed"}
                     delay={i * 400}
+                    sizes="(max-width: 640px) 30vw, 144px"
                     className="w-full"
                   />
                 ) : (
-                  <div className="flex aspect-[2/3] w-full items-center justify-center rounded-xl border-2 border-dashed border-line text-2xl text-line">
+                  <div className="flex aspect-[4/7] w-full items-center justify-center rounded-xl border-2 border-dashed border-line text-2xl text-line">
                     {i + 1}
                   </div>
                 )}
                 <p className="text-center text-xs font-medium text-muted">{p.title}</p>
+                {phase === "revealed" && drawn[i] && (
+                  <p className="-mt-1 text-center text-xs font-semibold text-ink">
+                    {drawn[i].card.name}
+                    <span className={drawn[i].reversed ? "text-wood" : "text-forest"}>（{drawn[i].reversed ? "逆位" : "正位"}）</span>
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -293,7 +300,7 @@ function Interpretation({
           const text = p.kind === "option" ? reading.meaning : reading[p.kind];
           return (
             <li key={p.title} className="flex gap-4 rounded-2xl border border-line bg-sand p-4">
-              <TarotCardView card={card} reversed={reversed} faceUp className="w-20 shrink-0 sm:w-24" />
+              <TarotCardView card={card} reversed={reversed} faceUp sizes="96px" className="w-20 shrink-0 sm:w-24" />
               <div className="flex flex-col gap-1.5">
                 <p className="text-xs font-semibold text-wood">
                   {i + 1}．{p.title}

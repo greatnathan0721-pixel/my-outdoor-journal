@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import Logo from "./logo";
 import { navLinks } from "./site-nav";
 
 export default function SiteHeader() {
@@ -13,7 +14,7 @@ export default function SiteHeader() {
     <header className="sticky top-0 z-[6000] border-b border-line/70 bg-card/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-forest text-lg shadow-sm">🧭</span>
+          <Logo className="h-9 w-9 rounded-[10px] shadow-sm" />
           <span className="flex flex-col leading-tight">
             <span className="font-bold text-ink">我的旅遊遊記</span>
             <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-wood">Travel Journal</span>

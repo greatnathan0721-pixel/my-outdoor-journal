@@ -86,19 +86,37 @@ export default function Catcher() {
       <StepLabel step={1}>上傳你看到的動植物照片</StepLabel>
 
       {!preview ? (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-sand px-4 py-10 text-center transition-colors hover:border-forest">
-          <span className="text-4xl">📷</span>
-          <span className="font-semibold text-ink">拍照或選擇照片</span>
+        <div className="flex flex-col gap-3 rounded-2xl border-2 border-dashed border-line bg-sand px-4 py-8 text-center">
+          <span className="text-4xl">🔍</span>
+          <span className="font-semibold text-ink">上傳旅途中拍到的動植物</span>
           <span className="text-sm text-muted">鳥、昆蟲、狗貓、魚、螃蟹、花、菇⋯⋯都可以試試</span>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="sr-only"
-            onChange={(e) => handleFile(e.target.files?.[0])}
-          />
-        </label>
+          <div className="mt-2 flex flex-wrap justify-center gap-3">
+            {/* 從相簿選：不加 capture，手機才會開相簿而不是直接開相機 */}
+            <label className={`${primaryButton} flex cursor-pointer items-center`}>
+              🖼️ 從相簿選照片
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => handleFile(e.target.files?.[0])}
+              />
+            </label>
+            <label className={`${secondaryButton} flex cursor-pointer items-center`}>
+              📷 現在拍一張
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                onChange={(e) => {
+                  handleFile(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+        </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-[minmax(0,240px)_1fr]">
           <div className="relative overflow-hidden rounded-2xl border border-line bg-sand">

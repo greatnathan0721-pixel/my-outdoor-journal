@@ -47,6 +47,7 @@ export default function DiaryHome() {
   const diary = useDiary();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const pinnedCount = diary.trips.reduce((n, t) => n + tripStops(t, diary.photos).length, 0);
+  const unlocated = diary.trips.filter((t) => tripStops(t, diary.photos).length === 0);
 
   return (
     <div className="flex flex-col gap-8">
@@ -60,6 +61,14 @@ export default function DiaryHome() {
             {pinnedCount > 0 ? `已經插上 ${pinnedCount} 支圖釘，點圖釘看看那趟旅程` : "還沒有圖釘"}
           </p>
         </div>
+        {unlocated.length > 0 && (
+          <p className="mb-3 rounded-2xl bg-wood-soft px-4 py-3 text-sm text-ink">
+            ⚠️ 有 {unlocated.length} 趟旅程（{unlocated.map((t) => `「${t.place}」`).join("、")}）還沒有地點，所以地圖上看不到圖釘。{" "}
+            <Link href="/new-trip#trips" className="font-semibold text-forest hover:underline">
+              去補上地點 →
+            </Link>
+          </p>
+        )}
         <FootprintMap diary={diary} selectedId={selectedId} onSelect={setSelectedId} />
       </section>
 

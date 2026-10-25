@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "./logo";
 import { navLinks } from "./site-nav";
 
 export default function SiteFooter() {
@@ -11,7 +12,7 @@ export default function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <p className="flex items-center gap-2 text-lg font-bold text-white">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2e6b45]">🧭</span>
+            <Logo className="h-9 w-9" />
             我的旅遊遊記
           </p>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-[#c9c2b0]">

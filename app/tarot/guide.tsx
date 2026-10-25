@@ -1,4 +1,5 @@
-import { cards, spreads } from "./cards";
+import Image from "next/image";
+import { cardImage, cards, spreads } from "./cards";
 
 // 牌陣與解牌指南（靜態內容，不需要互動）
 export default function Guide() {
@@ -50,12 +51,21 @@ export default function Guide() {
       </div>
 
       <h3 className="mt-8 font-semibold text-ink">22 張大阿爾克那・旅行關鍵字</h3>
+      <p className="mt-1 text-xs text-muted">
+        牌面使用 Rider–Waite–Smith 塔羅（Pamela Colman Smith 繪，1909 年），已屬公有領域。
+      </p>
       <p className="mt-1 text-sm text-muted">點開每張牌可以看正位、逆位在旅行中的意思。</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (
           <details key={c.id} className="group rounded-2xl border border-line bg-sand p-3 open:bg-card">
             <summary className="flex cursor-pointer list-none items-center gap-3">
-              <span className="text-2xl">{c.emoji}</span>
+              <Image
+                src={cardImage(c)}
+                alt={c.name}
+                width={40}
+                height={70}
+                className="h-[70px] w-10 shrink-0 rounded-md object-cover shadow-sm"
+              />
               <span className="flex-1">
                 <span className="block font-semibold text-ink">
                   {c.numeral}．{c.name}
