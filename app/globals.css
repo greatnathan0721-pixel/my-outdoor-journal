@@ -3,6 +3,25 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* 戶外風配色：沙地、森林綠、木棧道、海洋 */
+  --sand: #f3ede1;
+  --card: #fffcf6;
+  --ink: #1f2a24;
+  --muted: #6b6a5e;
+  --line: #e3d9c6;
+  --forest: #2e6b45;
+  --forest-deep: #22543a;
+  --moss: #e1ebd5;
+  --wood: #b8562b;
+  --wood-deep: #96431f;
+  --wood-soft: #f6e4d6;
+  --ocean: #a7d3df;
+  --ocean-deep: #2c7a8c;
+  --ocean-soft: #e0f0f3;
+  --land: #b9d29a;
+  --hit: #d9692f;
+  --on-accent: #ffffff;
 }
 
 @theme inline {
@@ -10,13 +29,142 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-sand: var(--sand);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-forest: var(--forest);
+  --color-forest-deep: var(--forest-deep);
+  --color-moss: var(--moss);
+  --color-wood: var(--wood);
+  --color-wood-deep: var(--wood-deep);
+  --color-wood-soft: var(--wood-soft);
+  --color-ocean: var(--ocean);
+  --color-ocean-deep: var(--ocean-deep);
+  --color-ocean-soft: var(--ocean-soft);
+  --color-land: var(--land);
+  --color-hit: var(--hit);
+  --color-on-accent: var(--on-accent);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --sand: #121714;
+    --card: #1b221e;
+    --ink: #ebe6da;
+    --muted: #a7a493;
+    --line: #2f3a33;
+    --forest: #6bb884;
+    --forest-deep: #5aa572;
+    --moss: #22352a;
+    --wood: #e2864f;
+    --wood-deep: #cc743f;
+    --wood-soft: #3a261b;
+    --ocean: #1d4250;
+    --ocean-deep: #7cc3d3;
+    --ocean-soft: #16323b;
+    --land: #3f5c3a;
+    --hit: #ec8d52;
+    --on-accent: #10140f;
   }
+}
+
+/* 卡片：像木牌一樣的暖色底 */
+@utility trail-card {
+  border-radius: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: 0 12px 40px -24px rgb(40 30 15 / 0.45);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 農場頁的動畫 */
+@keyframes sway {
+  0%, 100% { rotate: -4deg; }
+  50% { rotate: 4deg; }
+}
+
+@keyframes drift {
+  from { transform: translateX(-10%); }
+  to { transform: translateX(105%); }
+}
+
+@keyframes rise {
+  from { transform: translateY(0); opacity: 0.9; }
+  to { transform: translateY(-700%); opacity: 0; }
+}
+
+@keyframes bubble {
+  from { transform: translateY(0) scale(0.6); opacity: 1; }
+  to { transform: translateY(-28px) scale(1.2); opacity: 0; }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* 首頁的動畫 */
+@keyframes pin-drop {
+  0% { transform: translateY(-40px); opacity: 0; }
+  60% { transform: translateY(3px); opacity: 1; }
+  100% { transform: translateY(0); }
+}
+
+@keyframes ken-burns {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+
+/* 足跡地圖的紅色圖釘與資訊卡（MapLibre） */
+.trail-pin {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.trail-pin-svg {
+  display: block;
+  transform-origin: 50% 100%;
+  transition: scale 0.15s ease;
+  animation: pin-drop 0.6s ease-out var(--delay, 0ms) both;
+}
+.trail-pin-body {
+  fill: #d63a2b;
+}
+.trail-pin:hover .trail-pin-svg {
+  scale: 1.2;
+}
+.trail-pin[data-state="trip"] .trail-pin-body,
+.trail-pin[data-state="active"] .trail-pin-body {
+  fill: #a61e14;
+}
+.trail-pin[data-state="active"] .trail-pin-svg {
+  scale: 1.3;
+}
+.trail-popup .maplibregl-popup-content {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.trail-popup .maplibregl-popup-tip {
+  display: none;
 }
 
 body {

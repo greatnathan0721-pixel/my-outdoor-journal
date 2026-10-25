@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# MapLibre worker（npm install 時由 scripts/copy-maplibre-worker.mjs 自動複製）
+/public/maplibre/
