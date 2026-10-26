@@ -68,7 +68,7 @@ export default function FootprintMap({ diary, selectedId, onSelect }: Props) {
       .then((ml) => {
         if (cancelled || !containerRef.current) return;
         libRef.current = ml;
-        // worker 檔放在 public/maplibre（由 scripts/copy-maplibre-worker.mjs 複製）
+        // worker 檔放在 public/maplibre（由 scripts/copy-runtime-assets.mjs 複製）
         ml.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
         const m = new ml.Map({
           container: containerRef.current,

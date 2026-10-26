@@ -26,7 +26,7 @@ export type Photo = {
 };
 
 const DB_NAME = "travel-diary";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // v2：新增 creatures（神奇寶貝世界的收藏）
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -36,6 +36,7 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains("trips")) db.createObjectStore("trips", { keyPath: "id" });
       if (!db.objectStoreNames.contains("photos")) db.createObjectStore("photos", { keyPath: "id" });
       if (!db.objectStoreNames.contains("meta")) db.createObjectStore("meta");
+      if (!db.objectStoreNames.contains("creatures")) db.createObjectStore("creatures", { keyPath: "id" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -45,7 +46,7 @@ function openDb(): Promise<IDBDatabase> {
 let dbPromise: Promise<IDBDatabase> | null = null;
 const db = () => (dbPromise ??= openDb());
 
-function run<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T> | void) {
+export function run<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T> | void) {
   return db().then(
     (d) =>
       new Promise<T>((resolve, reject) => {
@@ -57,7 +58,7 @@ function run<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore)
   );
 }
 
-const getAll = <T>(store: string) => run<T[]>(store, "readonly", (s) => s.getAll());
+export const getAll = <T>(store: string) => run<T[]>(store, "readonly", (s) => s.getAll());
 
 // ---------- 給畫面用的 store：讀一次後快取，資料變動時通知 ----------
 
@@ -172,7 +173,8 @@ export async function isPersisted(): Promise<boolean> {
 
 // ---------- 備份／還原 ----------
 
-const FARM_KEY = "my-farm-creatures-v1";
+// 神奇寶貝世界的收藏有變動時通知（例如從備份還原），讓畫面重新讀取
+export const FARM_UPDATED = "farm-updated";
 
 function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
@@ -192,7 +194,7 @@ export async function exportBackup() {
     exportedAt: new Date().toISOString(),
     trips,
     photos: await Promise.all(photos.map(async ({ blob, ...p }) => ({ ...p, data: await blobToDataUrl(blob) }))),
-    farm: JSON.parse(localStorage.getItem(FARM_KEY) ?? "[]"),
+    farm: await getAll("creatures"),
   };
   const url = URL.createObjectURL(new Blob([JSON.stringify(backup)], { type: "application/json" }));
   const a = document.createElement("a");
@@ -225,9 +227,13 @@ export async function importBackup(file: File): Promise<{ trips: number; photos:
     tx.onerror = () => reject(tx.error);
   });
   if (Array.isArray(backup.farm) && backup.farm.length > 0) {
-    const current = JSON.parse(localStorage.getItem(FARM_KEY) ?? "[]") as { id: string }[];
-    const ids = new Set(current.map((c) => c.id));
-    localStorage.setItem(FARM_KEY, JSON.stringify([...current, ...backup.farm.filter((c: { id: string }) => !ids.has(c.id))]));
+    await new Promise<void>((resolve, reject) => {
+      const tx = d.transaction("creatures", "readwrite");
+      (backup.farm as { id: string }[]).forEach((c) => tx.objectStore("creatures").put(c));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    window.dispatchEvent(new Event(FARM_UPDATED));
   }
   await requestPersistence();
   await reload();

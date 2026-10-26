@@ -4,9 +4,19 @@ import { useRef, useState } from "react";
 import { chip, inputClass, primaryButton, secondaryButton, StepLabel } from "../components/trail-ui";
 import { identify, makeThumbnail, type Guess } from "./classifier";
 import { addCreature } from "./collection";
+import { makeCutout } from "./cutout";
 import { categories, guessEmoji, type Category } from "./species";
 
 type Status = "idle" | "loading" | "ready" | "error";
+type CutoutState = { status: "idle" | "working" | "done" | "failed"; dataUrl: string | null };
+
+// 透明背景的棋盤格，讓人看得出哪裡被去掉了
+const checker = {
+  backgroundImage:
+    "linear-gradient(45deg,#e5e0d4 25%,transparent 25%),linear-gradient(-45deg,#e5e0d4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e5e0d4 75%),linear-gradient(-45deg,transparent 75%,#e5e0d4 75%)",
+  backgroundSize: "16px 16px",
+  backgroundPosition: "0 0,0 8px,8px -8px,-8px 0",
+};
 
 export default function Catcher() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -14,7 +24,10 @@ export default function Catcher() {
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<Category | null>(null);
-  const [caught, setCaught] = useState<{ name: string; emoji: string | null; photo: string; where: string } | null>(null);
+  const [cutout, setCutout] = useState<CutoutState>({ status: "idle", dataUrl: null });
+  const [useCutout, setUseCutout] = useState(true);
+  const [facing, setFacing] = useState<"left" | "right">("left");
+  const [caught, setCaught] = useState<{ name: string; image: string; where: string } | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -25,12 +38,34 @@ export default function Catcher() {
     setGuesses([]);
     setName("");
     setCategory(null);
+    setCutout({ status: "idle", dataUrl: null });
+    setUseCutout(true);
+    setFacing("left");
     setStatus("loading");
+  }
+
+  // 去背：預設點照片中央，使用者也可以在照片上點牠的位置重新去背
+  async function runCutout(point = { x: 0.5, y: 0.5 }) {
+    if (!imgRef.current) return;
+    setCutout((c) => ({ ...c, status: "working" }));
+    try {
+      const result = await makeCutout(imgRef.current, point);
+      setCutout(result ? { status: "done", dataUrl: result.dataUrl } : { status: "failed", dataUrl: null });
+    } catch {
+      setCutout({ status: "failed", dataUrl: null });
+    }
+  }
+
+  function handlePhotoClick(e: React.MouseEvent<HTMLImageElement>) {
+    if (status === "loading") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    runCutout({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height });
   }
 
   // 圖片載入完成後才開始辨識
   async function handleImageLoad() {
     if (!imgRef.current) return;
+    runCutout();
     try {
       const result = await identify(imgRef.current);
       setGuesses(result);
@@ -49,23 +84,26 @@ export default function Catcher() {
     setCategory(g.category);
   }
 
-  function capture() {
+  async function capture() {
     if (!imgRef.current || !name.trim() || !category) return;
     const finalName = name.trim();
     // 以使用者輸入的為準：跟 AI 猜的一樣就用 AI 的 emoji，不一樣就用名稱猜 emoji
     const matched = guesses.find((g) => g.name === finalName);
     const emoji = matched?.emoji ?? guessEmoji(finalName);
     const photo = makeThumbnail(imgRef.current);
-    addCreature({
+    const finalCutout = useCutout && cutout.status === "done" ? cutout.dataUrl : null;
+    await addCreature({
       id: crypto.randomUUID(),
       name: finalName,
       emoji,
       category,
       photo,
+      cutout: finalCutout,
+      facing,
       aiGuess: guesses[0]?.name ?? null,
       caughtAt: new Date().toISOString(),
     });
-    setCaught({ name: finalName, emoji, photo, where: categories.find((c) => c.id === category)!.where });
+    setCaught({ name: finalName, image: finalCutout ?? photo, where: categories.find((c) => c.id === category)!.where });
   }
 
   function reset() {
@@ -75,6 +113,7 @@ export default function Catcher() {
     setGuesses([]);
     setName("");
     setCategory(null);
+    setCutout({ status: "idle", dataUrl: null });
     setCaught(null);
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -118,17 +157,50 @@ export default function Catcher() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-[minmax(0,240px)_1fr]">
-          <div className="relative overflow-hidden rounded-2xl border border-line bg-sand">
-            {/* eslint-disable-next-line @next/next/no-img-element -- 使用者剛選的本機照片 */}
-            <img ref={imgRef} src={preview} alt="你上傳的照片" onLoad={handleImageLoad} className="aspect-square w-full object-cover" />
-            {status === "loading" && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/45 text-center text-sm text-white">
-                <span className="animate-spin text-3xl">🔍</span>
-                AI 辨識中⋯⋯
-                <span className="text-xs opacity-80">第一次要下載模型，約需 10–30 秒</span>
+        <div className="grid gap-6 md:grid-cols-[minmax(0,260px)_1fr]">
+          <div className="flex flex-col gap-3">
+            <div className="relative overflow-hidden rounded-2xl border border-line bg-sand">
+              {/* eslint-disable-next-line @next/next/no-img-element -- 使用者剛選的本機照片 */}
+              <img
+                ref={imgRef}
+                src={preview}
+                alt="你上傳的照片"
+                onLoad={handleImageLoad}
+                onClick={handlePhotoClick}
+                className="block h-auto max-h-80 w-full cursor-crosshair object-contain"
+              />
+              {status === "loading" && (
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/45 text-center text-sm text-white">
+                  <span className="animate-spin text-3xl">🔍</span>
+                  AI 辨識中⋯⋯
+                  <span className="text-xs opacity-80">第一次要下載模型，約需 10–30 秒</span>
+                </div>
+              )}
+            </div>
+
+            {/* 去背結果 */}
+            <div className="rounded-2xl border border-line bg-card p-3">
+              <p className="mb-2 text-xs font-semibold text-ink">✂️ 去背結果（農場裡的樣子）</p>
+              <div className="flex h-36 items-center justify-center rounded-xl" style={checker}>
+                {cutout.status === "working" && <span className="text-sm text-muted">去背中⋯（第一次約需 10 秒）</span>}
+                {cutout.status === "failed" && <span className="px-3 text-center text-sm text-muted">沒有切出東西，點一下上面照片裡牠的位置再試一次</span>}
+                {cutout.status === "done" && cutout.dataUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- 去背圖是 data URL
+                  <img
+                    src={cutout.dataUrl}
+                    alt="去背後的樣子"
+                    className="max-h-32 w-auto drop-shadow"
+                  />
+                )}
               </div>
-            )}
+              <p className="mt-2 text-xs text-muted">切錯了？在上面的照片裡點一下牠身上，就會重新去背。</p>
+              {cutout.status === "done" && (
+                <label className="mt-2 flex items-center gap-2 text-xs text-ink">
+                  <input type="checkbox" checked={!useCutout} onChange={(e) => setUseCutout(!e.target.checked)} className="accent-forest" />
+                  不要去背，直接用原照片
+                </label>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-4">
@@ -184,8 +256,21 @@ export default function Catcher() {
                     ))}
                   </div>
                 </div>
+                {category !== "plant" && category !== "waterplant" && (
+                  <div>
+                    <p className="mb-2 text-sm text-muted">照片裡牠的頭朝哪邊？（讓牠走路時面向正確的方向）</p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setFacing("left")} className={chip(facing === "left")}>
+                        ⬅️ 朝左
+                      </button>
+                      <button type="button" onClick={() => setFacing("right")} className={chip(facing === "right")}>
+                        朝右 ➡️
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-3">
-                  <button onClick={capture} disabled={!name.trim() || !category} className={primaryButton}>
+                  <button onClick={capture} disabled={!name.trim() || !category || cutout.status === "working"} className={primaryButton}>
                     ⚡ 收服！
                   </button>
                   <button onClick={reset} className={secondaryButton}>
@@ -207,8 +292,7 @@ export default function Catcher() {
           >
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element -- 縮圖是 data URL */}
-              <img src={caught.photo} alt={caught.name} className="h-28 w-28 rounded-full border-4 border-wood object-cover" />
-              {caught.emoji && <span className="absolute -bottom-2 -right-2 text-4xl">{caught.emoji}</span>}
+              <img src={caught.image} alt={caught.name} className="h-32 w-auto max-w-56 object-contain drop-shadow-lg" />
             </div>
             <p className="text-3xl">🎉✨🎉</p>
             <p className="text-xl font-bold text-ink">恭喜你成功收服了</p>

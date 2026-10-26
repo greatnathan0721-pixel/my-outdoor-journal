@@ -40,5 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# MapLibre worker（npm install 時由 scripts/copy-maplibre-worker.mjs 自動複製）
+# MapLibre worker（npm install 時由 scripts/copy-runtime-assets.mjs 自動複製）
 /public/maplibre/
+
+# MediaPipe WebAssembly（npm install 時由 scripts/copy-runtime-assets.mjs 自動複製）
+/public/mediapipe/
