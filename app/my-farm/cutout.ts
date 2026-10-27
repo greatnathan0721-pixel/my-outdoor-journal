@@ -8,21 +8,39 @@ const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/interactive_s
 
 let segmenterPromise: Promise<InteractiveSegmenter> | null = null;
 
+// MediaPipe 第一次去背時會用 console.error 印出「INFO: Created TensorFlow Lite XNNPACK delegate for CPU.」
+// 這只是一般資訊，卻會讓 Next.js 開發模式跳出錯誤提示。WebAssembly 在載入時就會記住當下的 console.error，
+// 所以載入期間先換成會略過 INFO 訊息的版本（其他錯誤照常顯示），載入完再換回來
+function skipInfo(original: typeof console.error) {
+  return (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].startsWith("INFO:")) return;
+    original(...args);
+  };
+}
+
 function loadSegmenter() {
   segmenterPromise ??= (async () => {
-    const { FilesetResolver, InteractiveSegmenter } = await import("@mediapipe/tasks-vision");
-    const fileset = await FilesetResolver.forVisionTasks("/mediapipe");
-    return InteractiveSegmenter.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: MODEL_URL },
-      outputConfidenceMasks: true,
-      outputCategoryMask: false,
-    });
+    const original = console.error;
+    console.error = skipInfo(original);
+    try {
+      const { FilesetResolver, InteractiveSegmenter } = await import("@mediapipe/tasks-vision");
+      const fileset = await FilesetResolver.forVisionTasks("/mediapipe");
+      return await InteractiveSegmenter.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: MODEL_URL },
+        outputConfidenceMasks: true,
+        outputCategoryMask: false,
+      });
+    } finally {
+      console.error = original;
+    }
   })();
   segmenterPromise.catch(() => (segmenterPromise = null));
   return segmenterPromise;
 }
 
-export type Cutout = { dataUrl: string; coverage: number };
+// box：主體在原照片裡的位置（0～1），讓畫面可以把切出來的主體放回原位
+// clipped：主體碰到照片邊緣（例如人只拍到半身），拿來做動畫會很怪
+export type Cutout = { dataUrl: string; coverage: number; box: { x: number; y: number; w: number; h: number }; clipped: boolean };
 
 // point：照片上被點的位置（0～1）；回傳去背後的透明 PNG，以及主體佔畫面的比例
 export async function makeCutout(image: HTMLImageElement | HTMLCanvasElement, point = { x: 0.5, y: 0.5 }, maxSize = 360): Promise<Cutout | null> {
@@ -89,5 +107,7 @@ export async function makeCutout(image: HTMLImageElement | HTMLCanvasElement, po
   out.width = Math.max(1, Math.round(sw * scale));
   out.height = Math.max(1, Math.round(sh * scale));
   out.getContext("2d")!.drawImage(canvas, sx, sy, sw, sh, 0, 0, out.width, out.height);
-  return { dataUrl: out.toDataURL("image/png"), coverage: count / (w * h) };
+  const edge = 2;
+  const clipped = minX <= edge || minY <= edge || maxX >= w - 1 - edge || maxY >= h - 1 - edge;
+  return { dataUrl: out.toDataURL("image/png"), coverage: count / (w * h), box: { x: sx / w, y: sy / h, w: sw / w, h: sh / h }, clipped };
 }

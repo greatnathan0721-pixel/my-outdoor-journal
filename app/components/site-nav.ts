@@ -4,4 +4,5 @@ export const navLinks = [
   { href: "/next-trip", label: "下一站去哪", emoji: "🧭" },
   { href: "/tarot", label: "旅遊塔羅", emoji: "🔮" },
   { href: "/my-farm", label: "我的神奇寶貝世界", emoji: "🐾" },
+  { href: "/share", label: "一鍵分享", emoji: "📮" },
 ];

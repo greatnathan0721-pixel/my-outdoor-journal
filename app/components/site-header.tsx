@@ -21,7 +21,7 @@ export default function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {navLinks.map((l) => {
             const active = pathname === l.href;
             return (
@@ -38,19 +38,32 @@ export default function SiteHeader() {
           })}
         </nav>
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label="開啟選單"
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-sand text-xl text-ink md:hidden"
-        >
-          {open ? "✕" : "☰"}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/settings"
+            onClick={() => setOpen(false)}
+            aria-label="設定"
+            title="設定（AI 金鑰）"
+            className={`flex h-10 w-10 items-center justify-center rounded-xl border text-lg transition-colors ${
+              pathname === "/settings" ? "border-forest bg-forest" : "border-line bg-sand hover:border-forest"
+            }`}
+          >
+            ⚙️
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label="開啟選單"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-sand text-xl text-ink lg:hidden"
+          >
+            {open ? "✕" : "☰"}
+          </button>
+        </div>
       </div>
 
       {open && (
-        <nav className="border-t border-line/70 bg-card px-4 py-3 md:hidden">
+        <nav className="border-t border-line/70 bg-card px-4 py-3 lg:hidden">
           <ul className="flex flex-col gap-1">
             {navLinks.map((l) => (
               <li key={l.href}>

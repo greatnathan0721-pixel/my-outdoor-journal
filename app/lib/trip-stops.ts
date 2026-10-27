@@ -15,7 +15,7 @@ export type Stop = {
 // 距離小於這個值的照片算同一站
 const SAME_STOP_KM = 3;
 
-function km(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
+export function km(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
   const rad = Math.PI / 180;
   const h =
     Math.sin(((b.lat - a.lat) * rad) / 2) ** 2 +

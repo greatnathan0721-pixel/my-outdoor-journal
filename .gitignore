@@ -45,3 +45,6 @@ next-env.d.ts
 
 # MediaPipe WebAssembly（npm install 時由 scripts/copy-runtime-assets.mjs 自動複製）
 /public/mediapipe/
+
+# 樣式參考素材（只給開發參考，不上傳）
+/reference/

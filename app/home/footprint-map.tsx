@@ -6,11 +6,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import StoredPhoto from "../components/stored-photo";
+import { localizeMap, STYLE_URL } from "../lib/map-style";
 import { tripStops, type Stop } from "../lib/trip-stops";
 import type { DiaryState, Trip } from "../lib/trips-db";
 
 // OpenFreeMap：免費、不需要金鑰的向量地圖，可以一路放大到街道和步道
-const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const WORLD_VIEW = { center: [125, 25] as [number, number], zoom: 1.3 };
 
 type Props = {
@@ -88,18 +88,7 @@ export default function FootprintMap({ diary, selectedId, onSelect }: Props) {
         map = m;
         m.addControl(new ml.NavigationControl({ showCompass: false }), "bottom-right");
         m.on("load", () => {
-          // 地名優先顯示繁體中文，沒有的話用中文、再用當地名稱
-          for (const layer of m.getStyle().layers) {
-            if (layer.type === "symbol" && /^(label_|water_name|waterway_line_label|poi|airport)/.test(layer.id)) {
-              m.setLayoutProperty(layer.id, "text-field", [
-                "coalesce",
-                ["get", "name:zh-Hant"],
-                ["get", "name:zh"],
-                ["get", "name"],
-              ]);
-            }
-          }
-          if (m.getLayer("water")) m.setPaintProperty("water", "fill-color", "#a7d3df");
+          localizeMap(m);
           m.addSource("routes", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
           m.addLayer({
             id: "routes",

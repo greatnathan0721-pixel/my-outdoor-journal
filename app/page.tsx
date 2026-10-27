@@ -3,6 +3,7 @@ import Link from "next/link";
 import DiaryHome, { DiaryStats } from "./home/diary-home";
 
 const features = [
+  { href: "/share", emoji: "📮", title: "一鍵分享", desc: "把路線、照片和收服的夥伴合成路線短片、打卡長圖和 3D 地標打卡短片。" },
   { href: "/next-trip", emoji: "🧭", title: "下一站去哪", desc: "射飛鏢決定出國地點，或依偏好推薦台灣景點與最新展覽。" },
   { href: "/tarot", emoji: "🔮", title: "旅遊塔羅", desc: "出發前抽一組牌，預測旅途運勢、避開突發狀況。" },
   { href: "/my-farm", emoji: "🐾", title: "我的神奇寶貝世界", desc: "拍下旅途中遇到的動植物收服，讓牠們搬進你的農場一起生活。" },
@@ -61,7 +62,7 @@ export default function Home() {
             <p className="text-sm font-medium text-wood">✨ 更多玩法</p>
             <h2 className="text-2xl font-bold text-ink sm:text-3xl">準備下一趟冒險</h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((f) => (
               <Link
                 key={f.href}
